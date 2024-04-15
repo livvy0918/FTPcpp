@@ -1,11 +1,4 @@
-#include <arpa/inet.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <iostream>
-using namespace std;
+#include "head.h"
 
 #define BUF_SIZE 1024
 int main(int argc, char *argv[]) {
@@ -31,18 +24,18 @@ int main(int argc, char *argv[]) {
         cout << "connect() success!" << endl;
 
 
-    while (1) {
+    // while (1) {
 
-        cout << "请输入发送消息：";
-        cin >> message;
-        if (!strcmp(message, "q\n"))
-            break;
-        send(sock, message, strlen(message), 0);       // 写
-        str_len = recv(sock, message, BUF_SIZE - 1, 0); // 读
-        message[str_len] = '\0';
-        cout << "Message from server: "<< message << "\"" << endl;
-    }
-    close(sock);
+    //     cout << "请输入发送消息：";
+    //     cin >> message;
+    //     if (!strcmp(message, "q\n"))
+    //         break;
+    //     send(sock, message, strlen(message), 0);       // 写
+    //     str_len = recv(sock, message, BUF_SIZE - 1, 0); // 读
+    //     message[str_len] = '\0';
+    //     cout << "Message from server: "<< message << "\"" << endl;
+    // }
+    // close(sock);
     return 0;
 }
 
