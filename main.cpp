@@ -1,5 +1,5 @@
 #include <iostream>
-#include "ftpmain.h"
+#include "head.h"
 
 
 using namespace std;

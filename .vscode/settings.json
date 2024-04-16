@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "codecvt": "cpp",
+        "iomanip": "cpp"
+    }
+}

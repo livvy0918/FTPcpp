@@ -1,18 +1,35 @@
 using namespace std;
-// client.cpp \ server.cpp
 
+// common.cpp
+#include <locale.h>
+#include <codecvt>
+#include <locale>
+
+using namespace std;
+
+class Common{
+public:
+    Common();
+    ~Common();
+
+    //将utf8转换为GBK,windows引入windows.h
+    string utf8ToGbk(const char *src_str);
+    //将gbk编码字符转换为utf8
+    string gbkToUtf8(const char *src_str);
+};
+
+// ftpmain.cpp
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string>
+#include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #include <iostream>
-
-// ftpmain.cpp
 #include <iomanip>
 
 #define MAX_MSG_SIZE 1024
+#define BUF_SIZE 1024
 
 class Index {
 public:
@@ -21,6 +38,7 @@ public:
     void appStart();
 
   private:
+    Common *pCommon;
     
     //主机名
     string hostName = "";
@@ -35,6 +53,9 @@ public:
     string requestString = "";
     //接收的响应字符串
     string responseString = "";
+
+    // socket文件描述符
+    int ctrlSock;
     
 
     bool login();
@@ -48,5 +69,6 @@ public:
     bool deleteFile(string fileName);
     
 };
+
 
 

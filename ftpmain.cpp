@@ -33,9 +33,32 @@ bool Index::login() {
     cout << endl << endl;
 
     // 连接服务器
+    int str_len;
+    struct sockaddr_in serv_adr; // 32位目的地址和16位端口号分开
+    char message[BUF_SIZE];
 
+    // 创建socket
+    this->ctrlSock = socket(PF_INET, SOCK_STREAM, 0);
+    if (this->ctrlSock == -1)
+        cout << "socket() error" << endl;
 
+    // 服务端ip和端口号设置
+    memset(&serv_adr, 0, sizeof(serv_adr)); // 结构体清空
+    serv_adr.sin_family = AF_INET;                       // ipv4
+    serv_adr.sin_addr.s_addr = inet_addr(this -> hostName.c_str());   // 在本地起一个客户端
+    serv_adr.sin_port = htons(static_cast<unsigned short>(this->portNum));   // 端口号
+
+    // 客户端发起链接，客户端的ip和端口自动分配
+    if (connect(this->ctrlSock, (struct sockaddr *)&serv_adr, sizeof(sockaddr)) == -1){
+        cout << "connect() error!" << endl;
+        return false;
+    }
+    
     // 进入登录
+    // 用户名和密码验证
+
+    return true;
+
 }
 
 //菜单列表
@@ -138,7 +161,7 @@ bool Index::sendToRemote(bool returnReplyCode) {
     cout << endl << setw(10) << "发送命令: " << setw(10) << requestString << endl;
 
     requestString += "\r\n";
-    // requestString = this->pCommon->gbkToUtf8(requestString.c_str());
+    requestString = this->pCommon->gbkToUtf8(requestString.c_str());
     unsigned int cmdLength = requestString.length();
     char *tmpCmdStr = new char[cmdLength];
     memset(tmpCmdStr, 0, cmdLength);
