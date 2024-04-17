@@ -13,8 +13,14 @@ Index::~Index() {
 
 // 程序开始
 void Index::appStart() {
-  
-
+    if(!this->login()){
+        this->error(this->errorMsg);
+        cout << "error code is " << replyCode << endl;
+        sleep(3);
+        system("cls");
+        this->appStart();
+    }
+    menuList();
 }
 
 // 登录
@@ -39,9 +45,11 @@ bool Index::login() {
 
     // 创建socket
     this->ctrlSock = socket(PF_INET, SOCK_STREAM, 0);
-    if (this->ctrlSock == -1)
-        cout << "socket() error" << endl;
-
+    if (this->ctrlSock == -1){
+        this->errorMsg = "创建socket失败";
+        return false;
+    }
+        
     // 服务端ip和端口号设置
     memset(&serv_adr, 0, sizeof(serv_adr)); // 结构体清空
     serv_adr.sin_family = AF_INET;                       // ipv4
@@ -50,7 +58,7 @@ bool Index::login() {
 
     // 客户端发起链接，客户端的ip和端口自动分配
     if (connect(this->ctrlSock, (struct sockaddr *)&serv_adr, sizeof(sockaddr)) == -1){
-        cout << "connect() error!" << endl;
+        this->errorMsg = "连接服务器失败";
         return false;
     }
     
@@ -122,26 +130,26 @@ void Index::localInput()
         sendToRemote(true);
     }else if(cmd == "menu"){  //菜单
         menuList();
-    }else if(cmd == "cwd"){  //改变目录
-        //改变数据目录
-        requestString = "CWD "+param;
-        sendToRemote(true);
-    }else if(cmd == "list"){  //列表
-        getList(param);
-    }else if(cmd == "rename"){  // 重命名
+    // }else if(cmd == "cwd"){  //改变目录
+    //     //改变数据目录
+    //     requestString = "CWD "+param;
+    //     sendToRemote(true);
+    // }else if(cmd == "list"){  //列表
+    //     getList(param);
+    // }else if(cmd == "rename"){  // 重命名
 
-    }else if(cmd == "upload"){  //上传
-        uploadFile(param);
-    }else if(cmd == "download"){  //下载
-        downloadFile(param);
-    }else if(cmd == "del"){  //删除
-        deleteFile(param);
-    }else if(cmd == "clear"){  //清除屏幕
-        system("cls");
-        menuList();
-    }else if(cmd == "quit"){  //退出
-        cout << "Bye bye!" <<endl;
-        exit(-1);
+    // }else if(cmd == "upload"){  //上传
+    //     uploadFile(param);
+    // }else if(cmd == "download"){  //下载
+    //     downloadFile(param);
+    // }else if(cmd == "del"){  //删除
+    //     deleteFile(param);
+    // }else if(cmd == "clear"){  //清除屏幕
+    //     system("cls");
+    //     menuList();
+    // }else if(cmd == "quit"){  //退出
+    //     cout << "Bye bye!" <<endl;
+    //     exit(-1);
     }else{
         //errorMsg = "请输入正确的命令！";
         //error(errorMsg);
@@ -181,7 +189,7 @@ bool Index::sendToRemote(bool returnReplyCode) {
 
 //接收远程响应
 bool Index::recvFromRemote() {
-    if(this->ctrlSock == INVALID_SOCKET){
+    if(this->ctrlSock == -1){
         this->errorMsg = "服务已断开 ";
         return false;
     }
@@ -191,8 +199,8 @@ bool Index::recvFromRemote() {
 
     while(true){
         memset(buf, 0, MAX_MSG_SIZE);
-        Sleep(500);
-        recvStatus = recv(this->ctrlSock, buf, MAX_MSG_SIZE, MSG_PARTIAL);
+        sleep(0.5);
+        recvStatus = recv(this->ctrlSock, buf, MAX_MSG_SIZE, MSG_DONTWAIT ); // 可以使用多线程
         //cout << "######### " << buf << endl;
         if(recvStatus > 0){
             responseString = buf;
@@ -224,101 +232,121 @@ bool Index::getReplyCode() {
     return true;
 }
 
-//上传文件
-bool Index::uploadFile(string filePath) {
-    if(!transModelSelect()){
-        return false;
+//显示错误
+void Index::error(string errorStr)
+{
+    if(errorStr.length() > 0){
+        cout << endl;
+        cout << "Error: " << errorStr;
+        cout << endl;
     }
-    char *fileName = strrchr(filePath.c_str(), '/');
-    requestString = "STOR ";
-    requestString += fileName +1;
-    if(!sendToRemote(true)){
-        errorMsg = "命令发送失败";
-        return false;
+}
+//显示成功
+void Index::success(string sucStr)
+{
+    if(sucStr.length() > 0){
+        cout << endl;
+        cout << "服务响应:" << endl;
+        cout << sucStr;
+        cout << endl;
     }
-    if(!allowAccept()){
-        return false;
-    }
-
-    fstream fs;
-    fs.open(filePath, ios::in);
-    char buf[MAX_MSG_SIZE];
-    memset(buf, 0, MAX_MSG_SIZE);
-    bool status = true;
-    while(!fs.eof()){
-        fs.read(buf, MAX_MSG_SIZE);
-        int storStatus = send(dataTransSock, buf, sizeof (buf), 0);
-        if(storStatus == -1){
-            errorMsg = "上传文件异常";
-            status = false;
-            break;
-        }
-    }
-    closesocket(dataTransSock);
-    if(!status){
-        return false;
-    }
-
-    return true;
 }
 
-//下载文件
-bool Index::downloadFile(string fileName) {
-    //先获取文件大小
-    requestString = "SIZE ";
-    requestString += fileName;
-    if(!sendToRemote(true)){
-        errorMsg = "命令发送失败";
-        return false;
-    }
-    int fileSize = atoi(responseString.substr(4).c_str());
+// //上传文件
+// bool Index::uploadFile(string filePath) {
+//     if(!transModelSelect()){
+//         return false;
+//     }
+//     char *fileName = strrchr(filePath.c_str(), '/');
+//     requestString = "STOR ";
+//     requestString += fileName +1;
+//     if(!sendToRemote(true)){
+//         errorMsg = "命令发送失败";
+//         return false;
+//     }
+//     if(!allowAccept()){
+//         return false;
+//     }
 
-    if(!transModelSelect()){
-        return false;
-    }
-    requestString = "RETR " + fileName;
-    if(!sendToRemote(true)){
-        errorMsg = "命令发送失败";
-        return false;
-    }
-    if(!allowAccept()){
-        errorMsg = "连接失败";
-        return false;
-    }
-    //开始进行下载动作
-    string localPath = "d:/test/d_" + fileName;
-    fstream fs;
-    fs.open(localPath, ios::app);
-    int countFileSize = 0;
-    char *buf = new char[MAX_MSG_SIZE];
-    while (countFileSize < fileSize) {
-        memset(buf, 0, MAX_MSG_SIZE);
-        recv(dataTransSock, buf, MAX_MSG_SIZE, 0);
-        if(strlen(buf) < 1){
-            break;
-        }
-        fs << buf ;
-        countFileSize += strlen(buf);
-    }
-    fs.close();
+//     fstream fs;
+//     fs.open(filePath, ios::in);
+//     char buf[MAX_MSG_SIZE];
+//     memset(buf, 0, MAX_MSG_SIZE);
+//     bool status = true;
+//     while(!fs.eof()){
+//         fs.read(buf, MAX_MSG_SIZE);
+//         int storStatus = send(dataTransSock, buf, sizeof (buf), 0);
+//         if(storStatus == -1){
+//             errorMsg = "上传文件异常";
+//             status = false;
+//             break;
+//         }
+//     }
+//     closesocket(dataTransSock);
+//     if(!status){
+//         return false;
+//     }
 
-    return true;
-}
+//     return true;
+// }
 
-//删除文件
-bool Index::deleteFile(string fileName) {
-    if(!transModelSelect()){
-        return false;
-    }
-    requestString = "DELE " + fileName;
-    if(!sendToRemote(true)){
-        errorMsg = "命令发送失败";
-        return false;
-    }
+// //下载文件
+// bool Index::downloadFile(string fileName) {
+//     //先获取文件大小
+//     requestString = "SIZE ";
+//     requestString += fileName;
+//     if(!sendToRemote(true)){
+//         errorMsg = "命令发送失败";
+//         return false;
+//     }
+//     int fileSize = atoi(responseString.substr(4).c_str());
+
+//     if(!transModelSelect()){
+//         return false;
+//     }
+//     requestString = "RETR " + fileName;
+//     if(!sendToRemote(true)){
+//         errorMsg = "命令发送失败";
+//         return false;
+//     }
+//     if(!allowAccept()){
+//         errorMsg = "连接失败";
+//         return false;
+//     }
+//     //开始进行下载动作
+//     string localPath = "d:/test/d_" + fileName;
+//     fstream fs;
+//     fs.open(localPath, ios::app);
+//     int countFileSize = 0;
+//     char *buf = new char[MAX_MSG_SIZE];
+//     while (countFileSize < fileSize) {
+//         memset(buf, 0, MAX_MSG_SIZE);
+//         recv(dataTransSock, buf, MAX_MSG_SIZE, 0);
+//         if(strlen(buf) < 1){
+//             break;
+//         }
+//         fs << buf ;
+//         countFileSize += strlen(buf);
+//     }
+//     fs.close();
+
+//     return true;
+// }
+
+// //删除文件
+// bool Index::deleteFile(string fileName) {
+//     if(!transModelSelect()){
+//         return false;
+//     }
+//     requestString = "DELE " + fileName;
+//     if(!sendToRemote(true)){
+//         errorMsg = "命令发送失败";
+//         return false;
+//     }
 
 
-    return true;
-}
+//     return true;
+// }
 
 
 

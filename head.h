@@ -40,19 +40,23 @@ public:
   private:
     Common *pCommon;
     
-    //主机名
+    // 主机名
     string hostName = "";
-    //端口号
+    // 端口号
     int portNum = 0;
-    //用户名
+    // 用户名
     string userName = "";
-    //密码
+    // 密码
     string userPwd = "";
 
-    //命令字符串
+    // 命令字符串
     string requestString = "";
-    //接收的响应字符串
+    // 接收的响应字符串
     string responseString = "";
+    // 响应码
+    unsigned int replyCode = 0;
+    // 错误原因字符串
+    string errorMsg;
 
     // socket文件描述符
     int ctrlSock;
@@ -64,6 +68,8 @@ public:
     bool sendToRemote(bool returnReplyCode);
     bool recvFromRemote();
     bool getReplyCode();
+    void error(string errorStr);
+    void success(string sucStr);
     bool uploadFile(string filePath);
     bool downloadFile(string fileName);
     bool deleteFile(string fileName);
